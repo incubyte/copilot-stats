@@ -3,6 +3,23 @@ import { ConfigService } from '@nestjs/config';
 import { Octokit } from "octokit";
 import { isBefore, isEqual, subDays } from "date-fns";
 
+// Interface for AI usage statistics
+interface AIUsageStats {
+  AI_CODE: number;      // Code generation
+  AI_REVIEW: number;    // Code review
+  AI_DOCS: number;      // Documentation
+  AI_OTHER: number;     // Other usage
+}
+
+// Interface for the response payload
+interface CopilotUsageResponse {
+  pullRequestsReviewedByCopilot: {
+    pulls: any[];
+    total: number;
+  };
+  stats: AIUsageStats;
+}
+
 @Injectable()
 export class GitHubService {
   private readonly logger = new Logger(GitHubService.name);
@@ -28,7 +45,7 @@ export class GitHubService {
     this.logger.log(`GitHub service initialized for organization: ${this.org}`);
   }
 
-  public async getCopilotUsageStats(daysRange: number | undefined) {
+  public async getCopilotUsageStats(daysRange: number | undefined): Promise<CopilotUsageResponse> {
     this.logger.log(`Fetching Copilot usage stats for org: ${this.org}`);
 
     const repoNames = this.configService.get<string>('GITHUB_REPOS')
@@ -37,45 +54,64 @@ export class GitHubService {
     }
 
     const repos = repoNames.split(',').map(repo => repo.trim());
-    const pullRequests: any[] = [];
+    const pullRequests: any = {};
+    const aiUsageStats: AIUsageStats = {
+      AI_CODE: 0,
+      AI_REVIEW: 0,
+      AI_DOCS: 0,
+      AI_OTHER: 0,
+    };
+    let totalPullsReviewedByCopilot = 0;
+
     try {
       for (let repo of repos) {
         const pulls: any[] = await this.getPullRequestsForRepo(repo, daysRange);
         this.logger.log(`Found ${pulls.length} pull requests in ${repo} for the last ${daysRange || 1} days`);
+        pullRequests[repo] = []
 
         for (const pr of pulls) {
+          // Analyze PR description for AI usage patterns
+          const prAIUsage = this.analyzeAIUsageInPR(pr.body || '');
+          this.updateAIUsageStats(aiUsageStats, prAIUsage);
+
           this.logger.log(`Fetching reviews for PR #${pr.number} in ${repo}`);
           const { data } : { data: any[] } = await this.octokit.request(`GET /repos/${this.org}/${repo}/pulls/${pr.number}/reviews`, {
-            owner: 'OWNER',
-            repo: 'REPO',
-            pull_number: 'PULL_NUMBER',
+            owner: this.org,
+            repo: repo,
+            pull_number: pr.number,
             headers: {
               'X-GitHub-Api-Version': '2022-11-28'
             }
-          })
+          });
 
           const copilotReview = data.find((review: any) => review.user?.login?.includes('copilot'));
           if (!copilotReview)
             continue;
 
-          pullRequests.push({
+          totalPullsReviewedByCopilot++;
+          pullRequests[repo].push({
             number: pr.number,
             title: pr.title,
             author: pr.user.login,
             closed_at: pr.closed_at,
+            repo: repo,
+            ai_usage: prAIUsage,
             copilot_review: {
               login: copilotReview.user.login,
               type: copilotReview.user.type,
               body: copilotReview.body,
               url: copilotReview.html_url,
             }
-          })
+          });
         }
       }
 
       return {
-        pulls: pullRequests,
-        total: pullRequests.length,
+        pullRequestsReviewedByCopilot: {
+          pulls: pullRequests,
+          total: totalPullsReviewedByCopilot,
+        },
+        stats: aiUsageStats,
       };
     } catch (error) {
       this.logger.error('Error fetching Copilot usage stats:', error.message);
@@ -84,36 +120,60 @@ export class GitHubService {
   }
 
   /**
-   * Fetch Copilot usage metrics for the organization
-   * Based on: https://docs.github.com/en/rest/copilot/copilot-metrics?apiVersion=2022-11-28
+   * Analyzes PR description/body for AI usage patterns
+   * Looks for the AI_USAGE_START/END block and extracts checked categories
+   * @param prBody - The PR description/body text
+   * @returns Object with boolean flags for each AI usage category
    */
-  private async _getCopilotUsageMetrics() {
-    try {
-      this.logger.log('Fetching Copilot usage metrics...');
+  private analyzeAIUsageInPR(prBody: string): AIUsageStats {
+    const aiUsage: AIUsageStats = {
+      AI_CODE: 0,
+      AI_REVIEW: 0,
+      AI_DOCS: 0,
+      AI_OTHER: 0,
+    };
 
-      const params: any = {
-        org: this.org,
-        per_page: 100,
-        headers: {
-          'X-GitHub-Api-Version': '2022-11-28'
-        }
-      };
+    // Extract the AI usage block using regex
+    const aiUsageBlockRegex = /<!-- AI_USAGE_START -->(.*?)<!-- AI_USAGE_END -->/s;
+    const match = prBody.match(aiUsageBlockRegex);
 
-      // Get usage metrics for the organization
-      const response =
-        await this.octokit.request(`GET /orgs/${this.org}/copilot/metrics`, params);
-
-      this.logger.log(
-        `Successfully fetched Copilot usage metrics. Total records: ${response.data.length}`,
-      );
-      return response.data;
-    } catch (error) {
-      this.logger.error(
-        'Failed to fetch Copilot usage metrics:',
-        error.message,
-      );
-      throw new Error(`GitHub API Error: ${error.message}`);
+    if (!match) {
+      this.logger.debug('No AI usage block found in PR description');
+      return aiUsage;
     }
+
+    const aiUsageContent = match[1];
+    this.logger.debug(`Found AI usage block: ${aiUsageContent.trim()}`);
+
+    // Check for each category with checked boxes [x]
+    const patterns = {
+      AI_CODE: /- \[x] AI_CODE:/i,
+      AI_REVIEW: /- \[x] AI_REVIEW:/i,
+      AI_DOCS: /- \[x] AI_DOCS:/i,
+      AI_OTHER: /- \[x] AI_OTHER:/i,
+    };
+
+    // Test each pattern against the AI usage content
+    for (const [category, pattern] of Object.entries(patterns)) {
+      if (pattern.test(aiUsageContent)) {
+        aiUsage[category as keyof AIUsageStats] = 1;
+        this.logger.debug(`Found checked category: ${category}`);
+      }
+    }
+
+    return aiUsage;
+  }
+
+  /**
+   * Updates the cumulative AI usage statistics
+   * @param totalStats - The cumulative stats object to update
+   * @param prStats - The stats from a single PR to add
+   */
+  private updateAIUsageStats(totalStats: AIUsageStats, prStats: AIUsageStats): void {
+    totalStats.AI_CODE += prStats.AI_CODE;
+    totalStats.AI_REVIEW += prStats.AI_REVIEW;
+    totalStats.AI_DOCS += prStats.AI_DOCS;
+    totalStats.AI_OTHER += prStats.AI_OTHER;
   }
 
   /**
