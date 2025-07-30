@@ -3,8 +3,9 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint"
+    "clean": "turbo run clean",
+    "start": "turbo run start",
+    "start:dev": "turbo run start:dev"
   },
   "devDependencies": {
     "prettier": "^3.6.2",

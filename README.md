@@ -8,29 +8,25 @@ Follow these steps to set up and run the project:
 
 ### Prerequisites
 
-- Node.js (v18+ recommended)
-- npm or yarn
+- Node.js (v22+ recommended)
+- pnpm
 - [GitHub CLI (`gh`)](https://cli.github.com/) installed and authenticated
 
 ### Installation
 
 ```bash
 # Install dependencies
-npm install
-# or
-yarn install
+pnpm install
 ```
 
 ### Running the Application
 
 ```bash
 # Start the application in development mode
-npm run start:dev
-# or
-yarn start:dev
+pnpm start:dev
 ```
 
-The application will start on the default NestJS port (usually 3000). You can access the endpoints to retrieve GitHub stats as defined in the app.
+The application will start on port 3006 by default, can be edited. You can access the endpoints to retrieve GitHub stats as defined in the app.
 
 ### Environment Variables
 
