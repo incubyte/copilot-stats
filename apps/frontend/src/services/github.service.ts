@@ -37,7 +37,7 @@ export interface CopilotUsageResponse {
     pulls: PullRequestData[]
     total: number
   }
-  stats: AIUsageStats
+  usageOfAI: AIUsageStats
 }
 
 /**

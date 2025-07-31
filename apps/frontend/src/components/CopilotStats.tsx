@@ -17,22 +17,10 @@ const CopilotStats = ({ data }: CopilotStatsProps) => {
     )
   }
 
-  const { pullRequestsReviewedByCopilot, stats } = data
+  const { pullRequestsReviewedByCopilot, usageOfAI } = data
 
-  // Ensure stats exists and has valid structure
-  if (!stats || typeof stats !== 'object') {
-    return (
-      <div className="copilot-stats">
-        <div className="error">
-          <h3>Data Error</h3>
-          <p>Invalid statistics data received from server</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Calculate total AI usage across all categories with safe fallback
-  const totalAIUsage = Object.values(stats).reduce((sum, count) => sum + (count || 0), 0)
+  // Calculate total AI usage across all categories
+  const totalAIUsage = Object.values(usageOfAI).reduce((sum, count) => sum + (count || 0), 0)
 
   // Helper function to calculate percentage
   const getPercentage = (count: number, total: number) => {
@@ -42,6 +30,7 @@ const CopilotStats = ({ data }: CopilotStatsProps) => {
   // AI usage category labels and descriptions
   const aiCategories = [
     { key: 'AI_CODE', label: 'Code Generation', description: 'AI assisted code writing', color: '#4ade80' },
+    { key: 'AI_TEST', label: 'Code Review', description: 'AI assisted test generation', color: '#3b82f6' },
     { key: 'AI_REVIEW', label: 'Code Review', description: 'AI assisted code review', color: '#3b82f6' },
     { key: 'AI_DOCS', label: 'Documentation', description: 'AI assisted documentation', color: '#f59e0b' },
     { key: 'AI_OTHER', label: 'Other Usage', description: 'Other AI assistance', color: '#8b5cf6' },
@@ -67,7 +56,7 @@ const CopilotStats = ({ data }: CopilotStatsProps) => {
         <h2>AI Usage Breakdown</h2>
         <div className="usage-categories">
           {aiCategories.map(({ key, label, description, color }) => {
-            const count = stats[key as keyof AIUsageStats]
+            const count = usageOfAI[key as keyof AIUsageStats]
             const percentage = getPercentage(count, totalAIUsage)
 
             return (

@@ -15,7 +15,7 @@ interface AIUsageStats {
 // Interface for the response payload
 interface CopilotUsageResponse {
   pullRequestsReviewedByCopilot: any[];
-  ai_stats: AIUsageStats;
+  usageOfAI: AIUsageStats;
 }
 
 @Injectable()
@@ -106,7 +106,7 @@ export class GitHubService {
 
       return {
         pullRequestsReviewedByCopilot: pullRequests,
-        ai_stats: aiUsageStats,
+        usageOfAI: aiUsageStats,
       };
     } catch (error) {
       this.logger.error('Error fetching Copilot usage stats:', error.message);
