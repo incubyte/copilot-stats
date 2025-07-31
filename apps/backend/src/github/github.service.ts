@@ -210,7 +210,7 @@ export class GitHubService {
           sort: 'created',
           direction: 'desc',
           page: 1,
-          per_page: 28,
+          per_page: 5
         })
 
         pullRequests.push(...pulls)
