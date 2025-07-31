@@ -5,19 +5,17 @@ import { isBefore, isEqual, subDays } from "date-fns";
 
 // Interface for AI usage statistics
 interface AIUsageStats {
-  AI_CODE: number;      // Code generation
-  AI_REVIEW: number;    // Code review
-  AI_DOCS: number;      // Documentation
-  AI_OTHER: number;     // Other usage
+  code: number;       // Code generation
+  test: number;       // Test generation
+  review: number;     // PRs reviewed by Copilot
+  docs: number;       // Documentation
+  other: number;      // Other usage
 }
 
 // Interface for the response payload
 interface CopilotUsageResponse {
-  pullRequestsReviewedByCopilot: {
-    pulls: any[];
-    total: number;
-  };
-  stats: AIUsageStats;
+  pullRequestsReviewedByCopilot: any[];
+  ai_stats: AIUsageStats;
 }
 
 @Injectable()
@@ -56,12 +54,12 @@ export class GitHubService {
     const repos = repoNames.split(',').map(repo => repo.trim());
     const pullRequests: any = {};
     const aiUsageStats: AIUsageStats = {
-      AI_CODE: 0,
-      AI_REVIEW: 0,
-      AI_DOCS: 0,
-      AI_OTHER: 0,
+      code: 0,
+      review: 0,
+      docs: 0,
+      other: 0,
+      test: 0
     };
-    let totalPullsReviewedByCopilot = 0;
 
     try {
       for (let repo of repos) {
@@ -88,7 +86,7 @@ export class GitHubService {
           if (!copilotReview)
             continue;
 
-          totalPullsReviewedByCopilot++;
+          aiUsageStats.review++;
           pullRequests[repo].push({
             number: pr.number,
             title: pr.title,
@@ -107,11 +105,8 @@ export class GitHubService {
       }
 
       return {
-        pullRequestsReviewedByCopilot: {
-          pulls: pullRequests,
-          total: totalPullsReviewedByCopilot,
-        },
-        stats: aiUsageStats,
+        pullRequestsReviewedByCopilot: pullRequests,
+        ai_stats: aiUsageStats,
       };
     } catch (error) {
       this.logger.error('Error fetching Copilot usage stats:', error.message);
@@ -127,10 +122,11 @@ export class GitHubService {
    */
   private analyzeAIUsageInPR(prBody: string): AIUsageStats {
     const aiUsage: AIUsageStats = {
-      AI_CODE: 0,
-      AI_REVIEW: 0,
-      AI_DOCS: 0,
-      AI_OTHER: 0,
+      code: 0,
+      test: 0,
+      docs: 0,
+      other: 0,
+      review: 0
     };
 
     // Extract the AI usage block using regex
@@ -147,10 +143,10 @@ export class GitHubService {
 
     // Check for each category with checked boxes [x]
     const patterns = {
-      AI_CODE: /- \[x] AI_CODE:/i,
-      AI_REVIEW: /- \[x] AI_REVIEW:/i,
-      AI_DOCS: /- \[x] AI_DOCS:/i,
-      AI_OTHER: /- \[x] AI_OTHER:/i,
+      code: /- \[x] AI_CODE:/i,
+      test: /- \[x] AI_TEST:/i,
+      docs: /- \[x] AI_DOCS:/i,
+      others: /- \[x] AI_OTHER:/i,
     };
 
     // Test each pattern against the AI usage content
@@ -170,10 +166,11 @@ export class GitHubService {
    * @param prStats - The stats from a single PR to add
    */
   private updateAIUsageStats(totalStats: AIUsageStats, prStats: AIUsageStats): void {
-    totalStats.AI_CODE += prStats.AI_CODE;
-    totalStats.AI_REVIEW += prStats.AI_REVIEW;
-    totalStats.AI_DOCS += prStats.AI_DOCS;
-    totalStats.AI_OTHER += prStats.AI_OTHER;
+    totalStats.code += prStats.code;
+    totalStats.test += prStats.test;
+    totalStats.review += prStats.review;
+    totalStats.docs += prStats.docs;
+    totalStats.other += prStats.other;
   }
 
   /**
@@ -210,7 +207,7 @@ export class GitHubService {
           sort: 'created',
           direction: 'desc',
           page: 1,
-          per_page: 5
+          per_page: 10
         })
 
         pullRequests.push(...pulls)
