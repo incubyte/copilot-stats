@@ -1,4 +1,5 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, MessageEvent, Query, Sse } from '@nestjs/common';
+import { Observable } from 'rxjs';
 import { GitHubService } from './github.service';
 
 @Controller('github')
@@ -14,10 +15,15 @@ export class GitHubController {
     return this.githubService.getCurrentUser();
   }
 
- @Get('copilot/usage')
-  async getCopilotUsageStats(
+  /**
+   * Server-Sent Events endpoint that streams Copilot usage statistics
+   * @param daysRange Optional number of days to look back for PR analysis (default: 30)
+   * @returns Observable stream of MessageEvent containing usage stats and AI usage analysis
+   */
+  @Sse('copilot/usage')
+  getCopilotUsageStatsSse(
     @Query('daysRange') daysRange?: number,
-  ): Promise<any> {
-    return this.githubService.getCopilotUsageStats(daysRange);
+  ): Observable<MessageEvent> {
+    return this.githubService.getCopilotUsageStatsStream(daysRange);
   }
 }

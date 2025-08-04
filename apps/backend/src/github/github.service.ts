@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Octokit } from "octokit";
-import { isBefore, isEqual, subDays } from "date-fns";
+import { isAfter, startOfDay, subDays } from "date-fns";
+import { Observable } from 'rxjs';
 
 // Interface for AI usage statistics
 interface AIUsageStats {
@@ -43,7 +44,36 @@ export class GitHubService {
     this.logger.log(`GitHub service initialized for organization: ${this.org}`);
   }
 
-  public async getCopilotUsageStats(daysRange: number | undefined): Promise<CopilotUsageResponse> {
+  /**
+   * Streaming version of getCopilotUsageStats that emits data via SSE
+   * @param daysRange Number of days to look back for PR analysis
+   * @returns Observable that emits MessageEvent objects for SSE
+   */
+  public getCopilotUsageStatsStream(daysRange: number = 1): Observable<MessageEvent> {
+    return new Observable<MessageEvent>(observer => {
+      this.getCopilotUsageStats(daysRange)
+        .then(data => {
+          // Send the final result
+          observer.next({
+            data: JSON.stringify(data)
+          } as MessageEvent);
+
+          // Send close message to terminate SSE
+          observer.next({
+            data: 'close'
+          } as MessageEvent);
+
+          // Close the SSE stream
+          observer.complete();
+        })
+        .catch(error => {
+          this.logger.error('Error in streaming Copilot usage stats:', error.message);
+          observer.error(error);
+        });
+    });
+  }
+
+  private async getCopilotUsageStats(daysRange: number | undefined): Promise<CopilotUsageResponse> {
     this.logger.log(`Fetching Copilot usage stats for org: ${this.org}`);
 
     const repoNames = this.configService.get<string>('GITHUB_REPOS')
@@ -193,6 +223,8 @@ export class GitHubService {
    * @param {number} daysRange - last x days to fetch pull requests for
    */
   private async getPullRequestsForRepo(repo: string, daysRange: number = 1) {
+    let page = 1;
+    const perPage = 10;
     const pullRequests: any[] = []
     const endDate = subDays(new Date(), daysRange);
     try {
@@ -204,21 +236,23 @@ export class GitHubService {
             'X-GitHub-Api-Version': '2022-11-28'
           },
           state: 'closed',
-          sort: 'created',
+          sort: 'updated',
           direction: 'desc',
-          page: 1,
+          page,
           per_page: 10
         })
 
-        pullRequests.push(...pulls)
-
-        const endDateReached = pulls.some(pr => {
+        const filtered = pulls.filter(pr => {
           const closedDate = new Date(pr.closed_at);
-          return isBefore(closedDate, endDate) || isEqual(closedDate, endDate);
+          return isAfter(startOfDay(closedDate), startOfDay(endDate));
         });
 
-        if (endDateReached || pulls.length === 0)
-          break
+        pullRequests.push(...pulls)
+
+        if (pulls.length < perPage || filtered.length < pulls.length)
+          break;
+
+        page++;
       }
 
       return pullRequests
