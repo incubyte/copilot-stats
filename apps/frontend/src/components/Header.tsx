@@ -1,29 +1,93 @@
+import React from 'react';
+import {
+  AppBar,
+  Box,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  Toolbar,
+  Typography
+} from '@mui/material';
+import { Schedule } from '@mui/icons-material';
 import { useDaysRange } from '../context/DaysRangeContext';
 
 const Header = () => {
   const { daysRange, setDaysRange } = useDaysRange();
 
+  const handleChange = (event: SelectChangeEvent<number>) => {
+    setDaysRange(Number(event.target.value));
+  };
+
   return (
-    <header className="header">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-blue-400">Copilot Stats Dashboard</h1>
-        <div className="days-range-selector">
-          <label htmlFor="days-range" className="mr-2">Time Period:</label>
-          <select
-            id="days-range"
-            value={daysRange}
-            onChange={(e) => setDaysRange(Number(e.target.value))}
-            className="bg-gray-800 p-2 rounded-md"
-          >
-            <option value={7}>Last 7 days</option>
-            <option value={14}>Last 14 days</option>
-            <option value={30}>Last 30 days</option>
-            <option value={60}>Last 60 days</option>
-            <option value={90}>Last 90 days</option>
-          </select>
-        </div>
-      </div>
-    </header>
+    <AppBar
+      position="static"
+      elevation={0}
+      sx={{
+        backgroundColor: 'background.paper',
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        mb: 4
+      }}
+    >
+      <Toolbar sx={{ justifyContent: 'space-between', py: 2 }}>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{
+            color: 'primary.main',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1
+          }}
+        >
+          📊 Copilot Stats Dashboard
+        </Typography>
+
+        <Box sx={{ minWidth: 200 }}>
+          <FormControl fullWidth size="medium">
+            <InputLabel
+              id="time-period-label"
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                '&.Mui-focused': { color: 'primary.main' }
+              }}
+            >
+              <Schedule fontSize="small" />
+              Time Period
+            </InputLabel>
+            <Select
+              labelId="time-period-label"
+              value={daysRange}
+              label="Time Period"
+              onChange={handleChange}
+              sx={{
+                borderRadius: 2,
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'divider',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'primary.main',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'primary.main',
+                }
+              }}
+            >
+              <MenuItem value={7}>Last 7 days</MenuItem>
+              <MenuItem value={14}>Last 14 days</MenuItem>
+              <MenuItem value={30}>Last 30 days</MenuItem>
+              <MenuItem value={60}>Last 60 days</MenuItem>
+              <MenuItem value={90}>Last 90 days</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+      </Toolbar>
+    </AppBar>
   );
 };
 

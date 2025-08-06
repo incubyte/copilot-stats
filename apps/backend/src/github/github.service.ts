@@ -169,7 +169,7 @@ export class GitHubService {
     }
 
     const aiUsageContent = match[1];
-    this.logger.debug(`Found AI usage block: ${aiUsageContent.trim()}`);
+    this.logger.debug(`Found AI usage block in this PR.}`);
 
     // Check for each category with checked boxes [x]
     const patterns = {

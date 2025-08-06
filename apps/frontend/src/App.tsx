@@ -1,19 +1,24 @@
 import Header from './components/Header'
 import Dashboard from './components/Dashboard'
 import { DaysRangeProvider } from './context/DaysRangeContext'
+import { Box } from '@mui/material'
 
 function App() {
   return (
     <DaysRangeProvider>
-      <div className="app-container">
+      <Box
+        sx={{
+          minHeight: '100vh',
+          backgroundColor: 'background.default',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+      >
         <Header />
-        <main>
+        <Box component="main" sx={{ flex: 1 }}>
           <Dashboard />
-        </main>
-        <footer className="footer">
-          <p>Copilot Stats Dashboard</p>
-        </footer>
-      </div>
+        </Box>
+      </Box>
     </DaysRangeProvider>
   )
 }

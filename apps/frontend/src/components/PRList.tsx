@@ -1,6 +1,23 @@
 import React, { useState } from 'react';
+import {
+  Avatar,
+  Box,
+  Chip,
+  Collapse,
+  IconButton,
+  Link,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography
+} from '@mui/material';
+import { CalendarToday, ExpandMore, GitHub, Person, SmartToy } from '@mui/icons-material';
 import { format } from 'date-fns';
-import { PullRequest } from '../services/api';
+import { formatAIUsageTypes, PullRequest } from '../services/api';
 
 interface PRListProps {
   pullRequests: PullRequest[];
@@ -16,113 +33,270 @@ const PRList = ({ pullRequests }: PRListProps) => {
 
   if (!pullRequests || pullRequests.length === 0) {
     return (
-      <div className="text-center py-6 bg-gray-800 rounded-md">
-        <p className="text-gray-400">No pull requests reviewed by Copilot in the selected time period.</p>
-      </div>
+      <Paper elevation={2} sx={{ p: 4, textAlign: 'center' }}>
+        <SmartToy sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+        <Typography variant="h6" color="text.secondary">
+          No pull requests reviewed by Copilot
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          No activity found in the selected time period.
+        </Typography>
+      </Paper>
     );
   }
 
   return (
-    <div className="pr-list">
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-gray-800 rounded-md overflow-hidden">
-          <thead className="bg-gray-700">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+    <TableContainer component={Paper} elevation={2}>
+      <Table sx={{ minWidth: 650 }}>
+        <TableHead>
+          <TableRow sx={{ backgroundColor: 'primary.main' }}>
+            <TableCell sx={{ color: 'white', fontWeight: '600', py: 2 }}>
+              <Box display="flex" alignItems="center" gap={1}>
+                <GitHub fontSize="small" />
                 PR #
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                Title
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                Repository
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+              </Box>
+            </TableCell>
+            <TableCell sx={{ color: 'white', fontWeight: '600', py: 2 }}>
+              Title
+            </TableCell>
+            <TableCell sx={{ color: 'white', fontWeight: '600', py: 2 }}>
+              Repository
+            </TableCell>
+            <TableCell sx={{ color: 'white', fontWeight: '600', py: 2 }}>
+              <Box display="flex" alignItems="center" gap={1}>
+                <Person fontSize="small" />
                 Author
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+              </Box>
+            </TableCell>
+            <TableCell sx={{ color: 'white', fontWeight: '600', py: 2 }}>
+              <Box display="flex" alignItems="center" gap={1}>
+                <CalendarToday fontSize="small" />
                 Closed At
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+              </Box>
+            </TableCell>
+            <TableCell sx={{ color: 'white', fontWeight: '600', py: 2 }}>
+              <Box display="flex" alignItems="center" gap={1}>
+                <SmartToy fontSize="small" />
                 AI Usage
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-700">
-            {pullRequests.map((pr) => (
-              <React.Fragment key={`${pr.repo}-${pr.number}`}>
-                <tr
-                  className="hover:bg-gray-700 cursor-pointer transition-colors"
-                  onClick={() => toggleExpand(pr.number)}
-                >
-                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-white">
-                    #{pr.number}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-300">
+              </Box>
+            </TableCell>
+            <TableCell sx={{ color: 'white', fontWeight: '600', py: 2, width: 60 }}>
+              Details
+            </TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {pullRequests.map((pr) => (
+            <React.Fragment key={`${pr.repo}-${pr.number}`}>
+              <TableRow
+                hover
+                sx={{
+                  '&:nth-of-type(odd)': { backgroundColor: 'action.hover' },
+                  cursor: 'pointer'
+                }}
+                onClick={() => toggleExpand(pr.number)}
+              >
+                <TableCell sx={{ py: 2.5, px: 3 }}>
+                  <Chip
+                    label={`#${pr.number}`}
+                    color="primary"
+                    variant="outlined"
+                    size="small"
+                    sx={{ fontWeight: '600' }}
+                  />
+                </TableCell>
+                <TableCell sx={{ py: 2.5, px: 3, maxWidth: 300 }}>
+                  <Typography
+                    variant="body2"
+                    fontWeight="500"
+                    sx={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
                     {pr.title}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-300">
-                    {pr.repo}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-300">
-                    {pr.author}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-300">
-                    {pr.closed_at ? format(new Date(pr.closed_at), 'MMM d, yyyy') : 'N/A'}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    <div className="flex gap-1">
-                      {pr.ai_usage.code > 0 && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-900 text-blue-300">
-                          Code
-                        </span>
-                      )}
-                      {pr.ai_usage.test > 0 && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-teal-900 text-teal-300">
-                          Test
-                        </span>
-                      )}
-                      {pr.ai_usage.docs > 0 && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-900 text-yellow-300">
-                          Docs
-                        </span>
-                      )}
-                      {pr.ai_usage.other > 0 && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-900 text-purple-300">
-                          Other
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-                {expandedPR === pr.number && (
-                  <tr className="bg-gray-900">
-                    <td colSpan={6} className="px-6 py-4">
-                      <div className="pr-details">
-                        <h4 className="text-lg font-semibold mb-2">Copilot Review</h4>
-                        <div className="review-content bg-gray-800 p-4 rounded mb-3 text-gray-300 whitespace-pre-wrap">
-                          {pr.copilot_review.body || 'No review content available.'}
-                        </div>
-                        <div className="flex justify-end">
-                          <a
+                  </Typography>
+                </TableCell>
+                <TableCell sx={{ py: 2.5, px: 3 }}>
+                  <Chip
+                    label={pr.repo}
+                    color="secondary"
+                    variant="outlined"
+                    size="small"
+                  />
+                </TableCell>
+                <TableCell sx={{ py: 2.5, px: 3 }}>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>
+                      {pr.author.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <Typography variant="body2" fontWeight="500">
+                      {pr.author}
+                    </Typography>
+                  </Box>
+                </TableCell>
+                <TableCell sx={{ py: 2.5, px: 3 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {format(new Date(pr.closed_at), 'MMM dd, yyyy')}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {format(new Date(pr.closed_at), 'HH:mm')}
+                  </Typography>
+                </TableCell>
+                <TableCell sx={{ py: 2.5, px: 3 }}>
+                  <Typography
+                    variant="body2"
+                    fontWeight="500"
+                    color="primary.main"
+                  >
+                    {formatAIUsageTypes(pr.ai_usage)}
+                  </Typography>
+                </TableCell>
+                <TableCell sx={{ py: 2.5, px: 3 }}>
+                  <IconButton
+                    size="small"
+                    color="primary"
+                    sx={{
+                      transform: expandedPR === pr.number ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.3s'
+                    }}
+                  >
+                    <ExpandMore />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+
+              {/* Expanded Details Row */}
+              <TableRow>
+                <TableCell
+                  colSpan={7}
+                  sx={{
+                    py: 0,
+                    borderBottom: expandedPR === pr.number ? 1 : 0,
+                    borderColor: 'divider'
+                  }}
+                >
+                  <Collapse in={expandedPR === pr.number} timeout="auto" unmountOnExit>
+                    <Box sx={{ p: 3, backgroundColor: 'grey.50', borderRadius: 1, m: 1 }}>
+                      <Typography variant="h6" gutterBottom color="primary.main" fontWeight="600">
+                        🤖 Copilot Review Details
+                      </Typography>
+
+                      <Box display="flex" gap={4} mb={2}>
+                        <Box>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                            Reviewer
+                          </Typography>
+                          <Chip
+                            label={pr.copilot_review.login}
+                            color="info"
+                            variant="outlined"
+                            icon={<SmartToy />}
+                          />
+                        </Box>
+                        <Box>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                            Review Type
+                          </Typography>
+                          <Chip
+                            label={pr.copilot_review.type}
+                            color="success"
+                            variant="outlined"
+                          />
+                        </Box>
+                        <Box>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                            PR Link
+                          </Typography>
+                          <Link
                             href={pr.copilot_review.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-400 hover:text-blue-300 transition-colors"
+                            sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
                           >
-                            View on GitHub →
-                          </a>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </React.Fragment>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+                            <GitHub fontSize="small" />
+                            View on GitHub
+                          </Link>
+                        </Box>
+                      </Box>
+
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        Review Comment
+                      </Typography>
+                      <Paper
+                        elevation={1}
+                        sx={{
+                          p: 2,
+                          backgroundColor: 'white',
+                          border: 1,
+                          borderColor: 'divider'
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            whiteSpace: 'pre-wrap',
+                            fontFamily: 'monospace',
+                            fontSize: '0.85rem'
+                          }}
+                        >
+                          {pr.copilot_review.body || 'No review comment provided'}
+                        </Typography>
+                      </Paper>
+
+                      {/* AI Usage Breakdown */}
+                      <Box mt={3}>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          AI Usage Breakdown
+                        </Typography>
+                        <Box display="flex" gap={1} flexWrap="wrap">
+                          {pr.ai_usage.code > 0 && (
+                            <Chip
+                              label={`Code: ${pr.ai_usage.code}`}
+                              color="primary"
+                              size="small"
+                            />
+                          )}
+                          {pr.ai_usage.test > 0 && (
+                            <Chip
+                              label={`Test: ${pr.ai_usage.test}`}
+                              color="secondary"
+                              size="small"
+                            />
+                          )}
+                          {pr.ai_usage.review > 0 && (
+                            <Chip
+                              label={`Review: ${pr.ai_usage.review}`}
+                              color="error"
+                              size="small"
+                            />
+                          )}
+                          {pr.ai_usage.docs > 0 && (
+                            <Chip
+                              label={`Docs: ${pr.ai_usage.docs}`}
+                              color="warning"
+                              size="small"
+                            />
+                          )}
+                          {pr.ai_usage.other > 0 && (
+                            <Chip
+                              label={`Other: ${pr.ai_usage.other}`}
+                              color="info"
+                              size="small"
+                            />
+                          )}
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Collapse>
+                </TableCell>
+              </TableRow>
+            </React.Fragment>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
   );
 };
 

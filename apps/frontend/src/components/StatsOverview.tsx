@@ -1,18 +1,45 @@
+import React from 'react';
+import { Box, Chip, Grid, LinearProgress, Paper, Typography } from '@mui/material';
+import { BugReport, Category, Code, Description, RateReview } from '@mui/icons-material';
+
 interface StatItemProps {
   label: string;
   value: number;
   percentage: number;
-  color: string;
+  icon: React.ReactNode;
+  color: 'primary' | 'secondary' | 'error' | 'warning' | 'info';
 }
 
-const StatItem = ({ label, value, percentage, color }: StatItemProps) => (
-  <div className="stat-item flex justify-between p-3 border-b border-gray-700">
-    <span className="font-medium">{label}</span>
-    <div>
-      <span className={`font-bold ${color} mr-2`}>{value}</span>
-      <span className="text-gray-400">({percentage}%)</span>
-    </div>
-  </div>
+const StatItem = ({ label, value, percentage, icon, color }: StatItemProps) => (
+  <Paper elevation={1} sx={{ p: 2, borderRadius: 2 }}>
+    <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+      <Box display="flex" alignItems="center" gap={1}>
+        {icon}
+        <Typography variant="body2" fontWeight="500" color="text.secondary">
+          {label}
+        </Typography>
+      </Box>
+      <Chip
+        label={`${percentage}%`}
+        size="small"
+        color={color}
+        variant="outlined"
+      />
+    </Box>
+    <Typography variant="h6" fontWeight="700" color="text.primary" mb={1}>
+      {value}
+    </Typography>
+    <LinearProgress
+      variant="determinate"
+      value={percentage}
+      color={color}
+      sx={{
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: 'grey.200'
+      }}
+    />
+  </Paper>
 );
 
 interface StatsOverviewProps {
@@ -28,89 +55,91 @@ interface StatsOverviewProps {
 
 const StatsOverview = ({ summaryData }: StatsOverviewProps) => {
   return (
-    <div className="stats-overview card">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <div className="total-stats mb-4">
-            <h3 className="text-xl font-semibold mb-2">Total AI Usage</h3>
-            <div className="text-4xl font-bold text-blue-400">{summaryData.total}</div>
-          </div>
+    <Box>
+      <Grid container spacing={3}>
+        {/* Total AI Usage Card */}
+        <Grid item xs={12} md={3}>
+          <Paper
+            elevation={2}
+            sx={{
+              p: 3,
+              textAlign: 'center',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white'
+            }}
+          >
+            <Typography variant="h6" gutterBottom fontWeight="600">
+              Total AI Usage
+            </Typography>
+            <Typography variant="h3" fontWeight="700">
+              {summaryData.total}
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.8, mt: 1 }}>
+              Total interactions
+            </Typography>
+          </Paper>
+        </Grid>
 
-          <div className="progress-bars">
-            <h4 className="text-lg font-medium mb-2">Distribution</h4>
-            <div className="w-full bg-gray-700 rounded-full h-4 mb-3">
-              <div
-                className="bg-blue-500 h-4 rounded-full"
-                style={{ width: `${summaryData.code.percentage}%` }}
-                title={`Code: ${summaryData.code.percentage}%`}
-              ></div>
-            </div>
-            <div className="w-full bg-gray-700 rounded-full h-4 mb-3">
-              <div
-                className="bg-teal-500 h-4 rounded-full"
-                style={{ width: `${summaryData.test.percentage}%` }}
-                title={`Test: ${summaryData.test.percentage}%`}
-              ></div>
-            </div>
-            <div className="w-full bg-gray-700 rounded-full h-4 mb-3">
-              <div
-                className="bg-red-500 h-4 rounded-full"
-                style={{ width: `${summaryData.review.percentage}%` }}
-                title={`Review: ${summaryData.review.percentage}%`}
-              ></div>
-            </div>
-            <div className="w-full bg-gray-700 rounded-full h-4 mb-3">
-              <div
-                className="bg-yellow-500 h-4 rounded-full"
-                style={{ width: `${summaryData.docs.percentage}%` }}
-                title={`Docs: ${summaryData.docs.percentage}%`}
-              ></div>
-            </div>
-            <div className="w-full bg-gray-700 rounded-full h-4 mb-3">
-              <div
-                className="bg-purple-500 h-4 rounded-full"
-                style={{ width: `${summaryData.other.percentage}%` }}
-                title={`Other: ${summaryData.other.percentage}%`}
-              ></div>
-            </div>
-          </div>
-        </div>
+        {/* Individual Statistics */}
+        <Grid item xs={12} md={9}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatItem
+                label="Code Generation"
+                value={summaryData.code.value}
+                percentage={summaryData.code.percentage}
+                icon={<Code color="primary" />}
+                color="primary"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatItem
+                label="Test Generation"
+                value={summaryData.test.value}
+                percentage={summaryData.test.percentage}
+                icon={<BugReport color="secondary" />}
+                color="secondary"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatItem
+                label="Reviews"
+                value={summaryData.review.value}
+                percentage={summaryData.review.percentage}
+                icon={<RateReview color="error" />}
+                color="error"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatItem
+                label="Documentation"
+                value={summaryData.docs.value}
+                percentage={summaryData.docs.percentage}
+                icon={<Description color="warning" />}
+                color="warning"
+              />
+            </Grid>
+          </Grid>
 
-        <div className="stats-breakdown">
-          <h3 className="text-xl font-semibold mb-4">Breakdown</h3>
-          <StatItem
-            label="Code Generation"
-            value={summaryData.code.value}
-            percentage={summaryData.code.percentage}
-            color="text-blue-400"
-          />
-          <StatItem
-            label="Test Generation"
-            value={summaryData.test.value}
-            percentage={summaryData.test.percentage}
-            color="text-teal-400"
-          />
-          <StatItem
-            label="PR Reviews"
-            value={summaryData.review.value}
-            percentage={summaryData.review.percentage}
-            color="text-red-400"
-          />
-          <StatItem
-            label="Documentation"
-            value={summaryData.docs.value}
-            percentage={summaryData.docs.percentage}
-            color="text-yellow-400"
-          />
-          <StatItem
-            label="Other Usage"
-            value={summaryData.other.value}
-            percentage={summaryData.other.percentage}
-            color="text-purple-400"
-          />
-        </div>
-      </div>
-    </div>
+          {/* Other category if exists */}
+          {summaryData.other.value > 0 && (
+            <Box mt={2}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6} md={3}>
+                  <StatItem
+                    label="Other"
+                    value={summaryData.other.value}
+                    percentage={summaryData.other.percentage}
+                    icon={<Category color="info" />}
+                    color="info"
+                  />
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+        </Grid>
+      </Grid>
+    </Box>
   );
 };
 

@@ -39,16 +39,16 @@ export interface CopilotUsageResponse {
 }
 
 /**
- * Custom hook to subscribe to Copilot usage statistics SSE endpoint
+ * Custom hook to manually fetch Copilot usage statistics
  * @param daysRange - Number of days to look back for stats
- * @returns Query result with the statistics data
+ * @returns Query result with manual fetching capability
  */
 export function useCopilotStats(daysRange: number) {
   return useQuery<CopilotUsageResponse>({
     queryKey: ['copilot-stats', daysRange],
     queryFn: () => {
       return new Promise<CopilotUsageResponse>((resolve, reject) => {
-        // Create a new EventSource connection to the backend SSE endpoint - now using absolute URL
+        // Create a new EventSource connection to the backend SSE endpoint
         const eventSource = new EventSource(`${API_BASE_URL}/github/copilot/usage?daysRange=${daysRange}`);
 
         // Handle incoming SSE messages
@@ -79,16 +79,30 @@ export function useCopilotStats(daysRange: number) {
           eventSource.close();
           reject(new Error('Failed to connect to SSE endpoint'));
         };
-
-        // Cleanup function to close the connection if the component unmounts
-        return () => {
-          eventSource.close();
-        };
       });
     },
+    enabled: false, // Don't auto-fetch, wait for manual trigger
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
+    retry: false, // Don't retry automatically on failure
   });
+}
+
+/**
+ * Formats AI usage keys for display with proper comma separation
+ * @param stats - AI usage statistics object
+ * @returns Comma-separated string of AI usage types
+ */
+export function formatAIUsageTypes(stats: AIUsageStats): string {
+  const usageTypes: string[] = [];
+
+  if (stats.code > 0) usageTypes.push('Code');
+  if (stats.test > 0) usageTypes.push('Test');
+  if (stats.review > 0) usageTypes.push('Review');
+  if (stats.docs > 0) usageTypes.push('Documentation');
+  if (stats.other > 0) usageTypes.push('Other');
+
+  return usageTypes.join(', ') || 'None';
 }
 
 /**
