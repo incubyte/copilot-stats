@@ -188,22 +188,20 @@ const PRList = ({ pullRequests }: PRListProps) => {
                           <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                             Reviewer
                           </Typography>
-                          <Chip
-                            label={pr.copilot_review.login}
-                            color="info"
-                            variant="outlined"
-                            icon={<SmartToy />}
-                          />
+                          <Box display="flex" alignItems="center" gap={1}>
+                            <SmartToy fontSize="small" color="info" />
+                            <Typography variant="body2" fontWeight={500}>
+                              {pr.copilot_review.login}
+                            </Typography>
+                          </Box>
                         </Box>
                         <Box>
                           <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                             Review Type
                           </Typography>
-                          <Chip
-                            label={pr.copilot_review.type}
-                            color="success"
-                            variant="outlined"
-                          />
+                          <Typography variant="body2" fontWeight={500}>
+                            {pr.copilot_review.type}
+                          </Typography>
                         </Box>
                         <Box>
                           <Typography variant="subtitle2" color="text.secondary" gutterBottom>

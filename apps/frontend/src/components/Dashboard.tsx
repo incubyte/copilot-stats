@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Alert,
   Box,
@@ -7,7 +6,6 @@ import {
   CardContent,
   CircularProgress,
   Container,
-  Grid,
   LinearProgress,
   Paper,
   Typography
@@ -26,6 +24,7 @@ import { useDaysRange } from '../context/DaysRangeContext';
 import { formatAIUsageStats, useCopilotStats } from '../services/api';
 import UsageChart from './UsageChart';
 import PRList from './PRList';
+import Grid from '@mui/material/Grid';
 
 const Dashboard = () => {
   const { daysRange } = useDaysRange();
@@ -55,7 +54,7 @@ const Dashboard = () => {
           <Typography variant="h4" component="h1" gutterBottom fontWeight="700" color="text.primary">
             GitHub Copilot Analytics
           </Typography>
-          <Typography variant="h6" paragraph sx={{ color: 'text.secondary', mb: 4, maxWidth: 600, mx: 'auto' }}>
+          <Typography variant="h6" sx={{ color: 'text.secondary', mb: 4, maxWidth: 600, mx: 'auto' }}>
             Analyze your team's AI-powered development insights and productivity metrics for the last {daysRange} days
           </Typography>
           <Button
@@ -200,113 +199,115 @@ const Dashboard = () => {
         </Button>
       </Box>
 
-      <Grid container spacing={4}>
-        {/* Combined AI Usage Overview and Key Metrics */}
-        <Grid item xs={12} lg={8}>
-          <Card elevation={3} sx={{ height: '100%' }}>
-            <CardContent sx={{ p: 4 }}>
-              <Typography variant="h5" component="h2" gutterBottom fontWeight="600" color="text.primary" sx={{ mb: 3 }}>
-                📊 AI Usage Overview & Key Metrics
-              </Typography>
+      <Box display="flex" flexDirection="column">
+        <Grid container spacing={3} sx={{ mb: 4}}>
+          <Grid item xs={12} md={8} sx={{ flex: 1 }}>
+            <Card elevation={3} sx={{ height: '100%' }}>
+              <CardContent sx={{ p: 4 }}>
+                <Typography variant="h5" component="h2" gutterBottom fontWeight="600" color="text.primary" sx={{ mb: 3 }}>
+                  AI Usage Overview & Key Metrics
+                </Typography>
 
-              <Grid container spacing={3}>
-                {aiUsageStats.map((stat, index) => (
-                  <Grid item xs={12} sm={6} key={index}>
-                    <Paper
-                      elevation={1}
-                      sx={{
-                        p: 3,
-                        borderRadius: 2,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        height: '100%'
-                      }}
-                    >
-                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          {stat.icon}
-                          <Typography variant="body1" fontWeight="600" color="text.primary">
-                            {stat.label}
+                <Box display='grid' gridTemplateColumns={'repeat(2, minmax(0, 1fr))'} gap={3}>
+                  {aiUsageStats.map((stat, index) => (
+                    <Box key={index}>
+                      <Paper
+                        elevation={1}
+                        sx={{
+                          p: 3,
+                          borderRadius: 2,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          height: '100%'
+                        }}
+                      >
+                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                          <Box display="flex" alignItems="center" gap={1}>
+                            {stat.icon}
+                            <Typography variant="body1" fontWeight="600" color="text.primary">
+                              {stat.label}
+                            </Typography>
+                          </Box>
+                          <Typography variant="h6" fontWeight="700" color={stat.color}>
+                            {stat.value}
                           </Typography>
                         </Box>
-                        <Typography variant="h6" fontWeight="700" color="text.primary">
-                          {stat.value}
-                        </Typography>
-                      </Box>
 
-                      <Box display="flex" alignItems="center" gap={2}>
-                        <Box sx={{ flex: 1 }}>
-                          <LinearProgress
-                            variant="determinate"
-                            value={stat.percentage}
-                            color={stat.color}
-                            sx={{
-                              height: 8,
-                              borderRadius: 4,
-                              backgroundColor: 'grey.200'
-                            }}
-                          />
+                        <Box display="flex" alignItems="center" gap={2}>
+                          <Box sx={{ flex: 1 }}>
+                            <LinearProgress
+                              variant="determinate"
+                              value={stat.percentage}
+                              color={stat.color}
+                              sx={{
+                                height: 8,
+                                borderRadius: 4,
+                                backgroundColor: 'grey.200'
+                              }}
+                            />
+                          </Box>
+                          <Typography variant="body2" fontWeight="600" color="text.secondary">
+                            {stat.percentage}%
+                          </Typography>
                         </Box>
-                        <Typography variant="body2" fontWeight="600" color="text.secondary">
-                          {stat.percentage}%
-                        </Typography>
-                      </Box>
-                    </Paper>
-                  </Grid>
-                ))}
-              </Grid>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Usage Distribution Chart */}
-        <Grid item xs={12} lg={4}>
-          <Card elevation={3} sx={{ height: '100%' }}>
-            <CardContent sx={{ p: 4 }}>
-              <Typography variant="h6" component="h3" gutterBottom fontWeight="600" sx={{ mb: 3 }}>
-                📈 Usage Distribution
-              </Typography>
-              <UsageChart chartData={formattedStats.chartData} />
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Pull Requests Section - Full Width */}
-        <Grid item xs={12}>
-          <Card elevation={3}>
-            <CardContent sx={{ p: 4 }}>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-                <Typography variant="h5" component="h2" fontWeight="600" color="text.primary">
-                  🔍 Pull Requests Reviewed by Copilot
+                      </Paper>
+                    </Box>
+                  ))}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Card elevation={3} sx={{ height: '100%' }}>
+              <CardContent sx={{ p: 4 }}>
+                <Typography variant="h6" component="h3" gutterBottom fontWeight="600" sx={{ mb: 3 }}>
+                  Usage Distribution
                 </Typography>
-                <Paper
-                  elevation={1}
-                  sx={{
-                    px: 2,
-                    py: 1,
-                    backgroundColor: 'primary.main',
-                    color: 'primary.contrastText',
-                    borderRadius: 2
-                  }}
-                >
-                  <Typography variant="body2" fontWeight="600">
-                    {allPRs.length} PRs
-                  </Typography>
-                </Paper>
-              </Box>
-              <Box sx={{
-                width: '100%',
-                overflowX: 'auto',
-                '& .MuiTable-root': {
-                  minWidth: 800
-                }
-              }}>
-                <PRList pullRequests={allPRs} />
-              </Box>
-            </CardContent>
-          </Card>
+                <Box sx={{
+                  height: '300px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <UsageChart chartData={formattedStats.chartData} />
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
-      </Grid>
+        <Card elevation={3}>
+          <CardContent sx={{ p: 4 }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+              <Typography variant="h5" component="h2" fontWeight="600" color="text.primary">
+                Pull Requests Reviewed by Copilot
+              </Typography>
+              <Paper
+                elevation={1}
+                sx={{
+                  px: 2,
+                  py: 1,
+                  backgroundColor: 'primary.main',
+                  color: 'primary.contrastText',
+                  borderRadius: 2
+                }}
+              >
+                <Typography variant="body2" fontWeight="600">
+                  {allPRs.length} PRs
+                </Typography>
+              </Paper>
+            </Box>
+            <Box sx={{
+              width: '100%',
+              overflowX: 'auto',
+              '& .MuiTable-root': {
+                minWidth: 800
+              }
+            }}>
+              <PRList pullRequests={allPRs} />
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
     </Container>
   );
 };

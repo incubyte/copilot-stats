@@ -23,30 +23,53 @@ const UsageChart = ({ chartData }: UsageChartProps) => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'right' as const,
+        position: 'bottom' as const,
+        display: true,
         labels: {
-          color: 'rgba(255, 255, 255, 0.8)',
+          color: '#424242', // Dark text for light theme
           font: {
-            size: 12
-          }
+            size: 12,
+            family: 'Inter, sans-serif'
+          },
+          padding: 15,
+          usePointStyle: true,
+          pointStyle: 'circle'
         }
       },
       tooltip: {
+        enabled: true,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderColor: '#cccccc',
+        borderWidth: 1,
         callbacks: {
           label: function(context: any) {
             const label = context.label || '';
             const value = context.parsed || 0;
             const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
             const percentage = total ? Math.round((value / total) * 100) : 0;
-            return `${label}: ${value} (${percentage}%)`;
+            return `${label}: ${value} uses (${percentage}%)`;
           }
         }
+      }
+    },
+    elements: {
+      arc: {
+        borderWidth: 2,
+        borderColor: '#ffffff'
       }
     }
   };
 
   return (
-    <div className="chart-container" style={{ height: '300px' }}>
+    <div style={{
+      width: '100%',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center'
+    }}>
       <Pie data={chartData} options={options} />
     </div>
   );
